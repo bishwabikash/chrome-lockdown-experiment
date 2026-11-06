@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Throwaway-profile browser launcher. Profile dir is created fresh and deleted on exit.
+
+if [[ $EUID -eq 0 ]]; then
+  echo "do not run the browser as root; use the 'kali' user" >&2
+  exit 1
+fi
+
+BIN=""
+for c in google-chrome-stable google-chrome; do
+  command -v "$c" >/dev/null && { BIN="$c"; break; }
+done
+[[ -n "$BIN" ]] || { echo "no google-chrome binary found" >&2; exit 1; }
+
+PROFILE="$(mktemp -d /dev/shm/ghost-XXXXXXXX 2>/dev/null || mktemp -d)"
+trap 'rm -rf -- "$PROFILE"' EXIT INT TERM
+
+DISABLED_FEATURES=(
+  OptimizationHints
+  OptimizationHintsFetching
+  Translate
+  MediaRouter
+  AutofillServerCommunication
+  CalculateNativeWinOcclusion
+  InterestFeedContentSuggestions
+  PrivacySandboxSettings4
+  SegmentationPlatform
+  SigninInterceptBubbleV2
+  NTPMostLikelyFaviconsFromServer
+)
+
+exec "$BIN" \
+  --user-data-dir="$PROFILE" \
+  --incognito \
+  --no-first-run \
+  --no-default-browser-check \
+  --no-service-autorun \
+  --disable-sync \
+  --disable-background-networking \
+  --disable-background-timer-throttling \
+  --disable-component-update \
+  --disable-domain-reliability \
+  --disable-breakpad \
+  --disable-crash-reporter \
+  --disable-client-side-phishing-detection \
+  --disable-search-engine-choice-screen \
+  --disable-features="$(IFS=,; echo "${DISABLED_FEATURES[*]}")" \
+  --no-pings \
+  --no-report-upload \
+  --password-store=basic \
+  --webrtc-ip-handling-policy=disable_non_proxied_udp \
+  "$@"

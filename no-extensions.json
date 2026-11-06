@@ -1,0 +1,9 @@
+{
+  "ExtensionInstallBlocklist": ["*"],
+  "ExtensionSettings": {
+    "*": {
+      "installation_mode": "blocked",
+      "blocked_permissions": ["nativeMessaging"]
+    }
+  }
+}
